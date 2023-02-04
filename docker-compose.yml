@@ -1,0 +1,112 @@
+version: "3.9"
+
+
+x-restart:
+  &service-restart
+  always
+
+
+services:
+  redis:
+    restart: *service-restart
+    image: redis:7
+    hostname: redis
+    container_name: redis
+    ports:
+      - "6379:6379"
+    env_file:
+      - env/redis.env
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./data/redis/conf/redis.conf:/etc/redis.conf
+      - ./data/redis/data:/data:rw
+      - ./data/redis/logs:/logs:rw
+    command:
+      redis-server /etc/redis.conf
+
+  mysql:
+    image: arm64v8/mysql:8
+    container_name: mysql8
+    restart: *service-restart
+    env_file:
+      - env/mysql.env
+    command:
+      --default-authentication-plugin=mysql_native_password
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_general_ci
+      --explicit_defaults_for_timestamp=true
+      --lower_case_table_names=1
+      --max_allowed_packet=128M;
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./data/mysql/data:/var/lib/mysql
+      - ./data/mysql/conf:/etc/mysql/conf.d
+
+  zookeeper:
+    image: zookeeper:3.8
+    container_name: zookeeper
+    restart: *service-restart
+    ports:
+      - "2181:2181"
+
+  rmqnamesrv:
+    image: rocketmqinc/rocketmq
+    container_name: rmqnamesrv
+    restart: always
+    ports:
+      - "9876:9876"
+    environment:
+      JAVA_OPT_EXT: "-server -Xms1g -Xmx1g"
+    volumes:
+      - ./data/rmqnamesrv/logs:/root/logs
+    command: sh mqnamesrv
+    networks:
+      rmq:
+        aliases:
+          - rmqnamesrv
+
+  rmqbroker:
+    image: rocketmqinc/rocketmq
+    container_name: rmqbroker
+    restart: always
+    depends_on:
+      - rmqnamesrv
+    ports:
+      - "10909:10909"
+      - "10911:10911"
+    volumes:
+      - ./data/rmqbroker/logs:/root/logs
+      - ./data/rmqbroker/store:/root/store
+      - ./data/rmqbroker/conf/broker.conf:/opt/rocketmq-4.4.0/conf/broker.conf
+    command: sh mqbroker  -c /opt/rocketmq-4.4.0/conf/broker.conf
+    environment:
+      NAMESRV_ADDR: "rmqnamesrv:9876"
+      JAVA_OPT_EXT: "-server -Xms1g -Xmx1g -Xmn1g"
+    networks:
+      rmq:
+        aliases:
+          - rmqbroker
+
+  rmqconsole:
+    image: styletang/rocketmq-console-ng
+    container_name: rocketmq-console
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      - rmqnamesrv
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./data/console/logs:/root/logs
+    environment:
+      JAVA_OPTS: "-Drocketmq.namesrv.addr=rmqnamesrv:9876 -Dcom.rocketmq.sendMessageWithVIPChannel=false"
+    networks:
+      rmq:
+        aliases:
+          - rmqconsole
+
+networks:
+  rmq:
+    name: rmq
+    driver: bridge
