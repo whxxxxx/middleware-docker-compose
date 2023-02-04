@@ -24,24 +24,24 @@ services:
     command:
       redis-server /etc/redis.conf
 
-  mysql:
-    image: arm64v8/mysql:8
-    container_name: mysql8
-    restart: *service-restart
-    env_file:
-      - env/mysql.env
-    command:
-      --default-authentication-plugin=mysql_native_password
-      --character-set-server=utf8mb4
-      --collation-server=utf8mb4_general_ci
-      --explicit_defaults_for_timestamp=true
-      --lower_case_table_names=1
-      --max_allowed_packet=128M;
-    ports:
-      - "3306:3306"
-    volumes:
-      - ./data/mysql/data:/var/lib/mysql
-      - ./data/mysql/conf:/etc/mysql/conf.d
+#  mysql:
+#    image: arm64v8/mysql:8
+#    container_name: mysql8
+#    restart: *service-restart
+#    env_file:
+#      - env/mysql.env
+#    command:
+#      --default-authentication-plugin=mysql_native_password
+#      --character-set-server=utf8mb4
+#      --collation-server=utf8mb4_general_ci
+#      --explicit_defaults_for_timestamp=true
+#      --lower_case_table_names=1
+#      --max_allowed_packet=128M;
+#    ports:
+#      - "3306:3306"
+#    volumes:
+#      - ./data/mysql/data:/var/lib/mysql
+#      - ./data/mysql/conf:/etc/mysql/conf.d
 
   zookeeper:
     image: zookeeper:3.8
