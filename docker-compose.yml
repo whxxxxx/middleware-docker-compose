@@ -7,6 +7,27 @@ x-restart:
 
 
 services:
+  seata-server:
+    image: seataio/seata-server:1.6.1
+    container_name: seata-server
+    ports:
+      - "7091:7091"
+      - "8091:8091"
+    volumes:
+      - ./data/seata-server/conf/application.yml:/seata-server/resources/application.yml
+
+  nacos:
+    image: nacos/nacos-server:v2.2.0-slim
+    container_name: nacos
+    env_file:
+      - env/nacos.env
+    volumes:
+      - ./data/nacos/logs:/home/nacos/logs
+      - ./data/nacos/conf/application.properties:/home/nacos/conf/application.properties
+    ports:
+      - 8848:8848
+    restart: always
+
   apollo-configservice:
     container_name: apollo-configservice
     image: apolloconfig/apollo-configservice
@@ -14,7 +35,7 @@ services:
     ports:
       - 9991:8080
     volumes:
-      - ./root/apollo/apollocompose/logs:/opt/logs
+      - ./data/apollo/apolloconfigservice/logs:/opt/logs
     env_file:
       - env/apolloconfig.env
 
@@ -25,7 +46,7 @@ services:
     ports:
       - 9992:8090
     volumes:
-      - ./data/apollo/apollocompose/logs:/opt/logs
+      - ./data/apollo/apolloadminservice/logs:/opt/logs
     env_file:
       - env/apolloconfig.env
 
@@ -38,7 +59,7 @@ services:
     ports:
       - 9993:8070
     volumes:
-      - ./root/apollo/apollocompose/logs:/opt/logs
+      - ./data/apollo/apolloportal/logs:/opt/logs
     env_file:
       - env/apolloportal.env
 
