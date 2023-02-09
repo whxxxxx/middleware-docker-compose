@@ -7,6 +7,41 @@ x-restart:
 
 
 services:
+  apollo-configservice:
+    container_name: apollo-configservice
+    image: apolloconfig/apollo-configservice
+    restart: always
+    ports:
+      - 9991:8080
+    volumes:
+      - ./root/apollo/apollocompose/logs:/opt/logs
+    env_file:
+      - env/apolloconfig.env
+
+  apollo-adminservice:
+    container_name: apollo-adminservice
+    image: apolloconfig/apollo-adminservice
+    restart: always
+    ports:
+      - 9992:8090
+    volumes:
+      - ./data/apollo/apollocompose/logs:/opt/logs
+    env_file:
+      - env/apolloconfig.env
+
+  apollo-portal:
+    container_name: apollo-portal
+    image: apolloconfig/apollo-portal
+    restart: always
+    depends_on:
+      - apollo-adminservice
+    ports:
+      - 9993:8070
+    volumes:
+      - ./root/apollo/apollocompose/logs:/opt/logs
+    env_file:
+      - env/apolloportal.env
+
   redis:
     restart: *service-restart
     image: redis:7
@@ -24,24 +59,24 @@ services:
     command:
       redis-server /etc/redis.conf
 
-#  mysql:
-#    image: arm64v8/mysql:8
-#    container_name: mysql8
-#    restart: *service-restart
-#    env_file:
-#      - env/mysql.env
-#    command:
-#      --default-authentication-plugin=mysql_native_password
-#      --character-set-server=utf8mb4
-#      --collation-server=utf8mb4_general_ci
-#      --explicit_defaults_for_timestamp=true
-#      --lower_case_table_names=1
-#      --max_allowed_packet=128M;
-#    ports:
-#      - "3306:3306"
-#    volumes:
-#      - ./data/mysql/data:/var/lib/mysql
-#      - ./data/mysql/conf:/etc/mysql/conf.d
+  mysql:
+    image: arm64v8/mysql:8
+    container_name: mysql8
+    restart: *service-restart
+    env_file:
+      - env/mysql.env
+    command:
+      --default-authentication-plugin=mysql_native_password
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_general_ci
+      --explicit_defaults_for_timestamp=true
+      --lower_case_table_names=1
+      --max_allowed_packet=128M;
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./data/mysql/data:/var/lib/mysql
+      - ./data/mysql/conf:/etc/mysql/conf.d
 
   zookeeper:
     image: zookeeper:3.8

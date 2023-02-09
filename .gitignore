@@ -6,3 +6,4 @@
 !/data/rmqbroker/conf/
 /data/rmqnamesrv/*
 /data/console/*
+/data/apollo/*
